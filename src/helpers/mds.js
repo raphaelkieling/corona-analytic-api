@@ -1,4 +1,5 @@
 const states = require("../config/states");
+const moment = require("moment");
 
 class mdsHelper {
     sourceParser(body) {
@@ -13,6 +14,10 @@ class mdsHelper {
         };
     }
     brazilValuesParser(brazilList) {
+        const convertDateToISO8091 = (date, time) => {
+            const newDate = moment(`${date} ${time}`, "DD/MM/YYYY HH:mm");
+            return newDate.isValid() ? newDate.toISOString() : "";
+        };
         // Create a map with all states to take the history
         const stateMap = new Map();
         brazilList.forEach(item => {
@@ -22,15 +27,24 @@ class mdsHelper {
 
                 history.push({
                     date: item.date,
+                    time: item.time,
+                    date_iso: convertDateToISO8091(item.date, item.time),
                     ...this.informationValueParser(itemValue)
                 });
             });
         });
 
         // Get the last item from brazilList array, important to not break the current users
-        const lastBrazilItem = brazilList[brazilList.length - 1];
+        const { date, time, values } = brazilList[brazilList.length - 1];
 
-        lastBrazilItem.values = lastBrazilItem.values.map(value => {
+        const lastBrazilItem = {
+            date,
+            time,
+            date_iso: convertDateToISO8091(date, time),
+            values: []
+        };
+
+        lastBrazilItem.values = values.map(value => {
             return {
                 uid: value.uid || "",
                 state: states[value.uid] || "",
